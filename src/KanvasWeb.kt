@@ -21,19 +21,13 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
         }
     }
 
-    fun currentLine() : Int {
-        return this.textBeforeCaret().lines().size
-    }
+    private fun currentLine() : Int = this.textBeforeCaret().lines().size - 1
 
-    fun currentIndex() : Int {
-        return this.caretIndex;
-    }
+    fun currentIndex() : Int = this.caretIndex
 
-    fun numberOfLines() : Int  {
-        return this.nLines
-    }
+    private fun numberOfLines() : Int = this.nLines
 
-    fun currentColumn() : Int  {
+    private fun currentColumn() : Int  {
         val i = this.textBeforeCaret().lastIndexOf("\n")
         if (i == -1) {
             return this.caretIndex;
@@ -47,19 +41,24 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
     }
 
     private fun goTo(line: Int, column: Int) {
-        var l = line
-        var c = column
+        println("Going to L$line C$column")
+        val l = when {
+            line < 0 -> 0
+            line >= this.numberOfLines() -> this.numberOfLines() - 1
+            else -> line
+        }
+        val c = when {
+            column < 0 -> 0
+            column >= this.numberOfColumnsForLine(l) -> this.numberOfColumnsForLine(l)
+            else -> column
+        }
+        println("  or better going to L$l C$c")
         var newIndex = 0
-        if (line >= this.numberOfLines()) {
-            l = this.numberOfLines() - 1
-        }
-        if (column > this.numberOfColumnsForLine(line)) {
-            c = this.numberOfColumnsForLine(line)
-        }
-        for (i in 0.rangeTo(l)) {
+        for (i in 0 until l) {
             newIndex = this.text.indexOf("\n", newIndex) + 1
         }
         newIndex += c
+        println("  newIndex $newIndex")
         this.caretIndex = newIndex
     }
 
@@ -96,8 +95,6 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
         }
         this.text = this.textBeforeCaret() + c + this.textAfterCaret()
         this.caretIndex = this.caretIndex + 1
-        println("TEXT <<<$text>>>")
-        println("CARETINDEX $caretIndex")
     }
 
     fun deletePrevChar() : Boolean {
