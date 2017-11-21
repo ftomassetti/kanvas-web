@@ -64,7 +64,7 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
     }
 
     private fun toHtml(text: String) : String {
-        return text.replace("\n", "<br/>")
+        return text.replace("\n", "<br/>").replace(" ", "&nbsp;")
     }
 
     private fun removeLine() {
