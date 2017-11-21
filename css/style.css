@@ -6,10 +6,10 @@ html {
     margin-right: 10%;
 }
 
-#editor {    
-    height: 200px;
+#editor {
     background-color: #44443e;
-    border: 1px #737373 solid;    
+    border: 1px #737373 solid;
+    overflow-y: auto;
 }
 
 #lines {
@@ -22,12 +22,15 @@ html {
   background-color: #33332e;
   border-right: 1px #737373 solid;
   float: left;
+  padding-bottom: 5px;
+
 }
 
 #content {
   height: 100%;
   padding: 10px;
   padding-top: 0px;
+  padding-bottom: 5px;
   float: left;
 }
 
