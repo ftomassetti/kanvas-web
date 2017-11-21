@@ -96,6 +96,8 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
         }
         this.text = this.textBeforeCaret() + c + this.textAfterCaret()
         this.caretIndex = this.caretIndex + 1
+        println("TEXT <<<$text>>>")
+        println("CARETINDEX $caretIndex")
     }
 
     fun deletePrevChar() : Boolean {
