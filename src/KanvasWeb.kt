@@ -1,11 +1,14 @@
 import jquery.JQuery
+import org.w3c.dom.events.Event
+import kotlin.browser.document
+import kotlin.js.Math
 
 class Editor(initialText: String = "", initialIndex: Int = 0) {
     private var caretIndex: Int = initialIndex
     private var nLines: Int
     private var text: String = initialText
 
-    fun textBeforeCaret() : String {
+    private fun textBeforeCaret() : String {
         return if (this.caretIndex == 0) {
             ""
         } else {
@@ -13,7 +16,7 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
         }
     }
 
-    fun textAfterCaret() : String {
+    private fun textAfterCaret() : String {
         return if (this.caretIndex  == this.text.length) {
             ""
         } else {
@@ -25,7 +28,7 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
 
     fun currentIndex() : Int = this.caretIndex
 
-    private fun numberOfLines() : Int = this.nLines
+    internal fun numberOfLines() : Int = this.nLines
 
     private fun currentColumn() : Int  {
         val i = this.textBeforeCaret().lastIndexOf("\n")
@@ -40,7 +43,7 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
         return lines[line].length
     }
 
-    private fun goTo(line: Int, column: Int) {
+    internal fun goTo(line: Int, column: Int) {
         println("Going to L$line C$column")
         val l = when {
             line < 0 -> 0
@@ -158,12 +161,14 @@ class Editor(initialText: String = "", initialIndex: Int = 0) {
         }
     }
 
-    fun goToStartOfLine() {
+    fun goToStartOfLine() : Boolean {
         this.goTo(this.currentLine(), 0)
+        return true
     }
 
-    fun goToEndOfLine() {
+    fun goToEndOfLine() : Boolean {
         this.goTo(this.currentLine(), this.numberOfColumnsForLine(this.currentLine()))
+        return true
     }
 
     init {
@@ -182,43 +187,59 @@ fun updateHtml(editor: Editor) {
     js("$(\".blinking-cursor\").css({ top: cursorPos.top, left: cursorPos.left - delta })")
 }
 
+val KEY_ENTER = 13
+val KEY_DELETE = 8
+val KEY_CANC = 46
+val KEY_ARROW_LEFT = 37
+val KEY_ARROW_RIGHT = 39
+val KEY_ARROW_UP = 38
+val KEY_ARROW_DOWN = 40
+val KEY_HOME = 36
+val KEY_END = 35
+
 fun main(args: Array<String>) {
     println("Starting...")
     val editor = Editor()
     updateHtml(editor)
-    js("$(document)").keypress({ e : dynamic ->
-        println("PRESSED ${e.which}")
-        val c = if (e.which == 13) "\n" else js("String.fromCharCode(e.which)") as String
+
+    document.onkeypress =  { e : dynamic ->
+        val c = if (e.which == KEY_ENTER) "\n" else js("String.fromCharCode(e.which)") as String
         editor.type(c)
         updateHtml(editor)
-    })
-    js("$(document)").keydown({ e : dynamic ->
-        if (e.which == 46 && editor.deleteNextChar()) {
+    }
+    document.onkeydown = { e : dynamic ->
+        val needUpdate = when (e.which) {
+            KEY_CANC -> editor.deleteNextChar()
+            KEY_DELETE -> editor.deletePrevChar()
+            KEY_ARROW_LEFT -> editor.moveLeft()
+            KEY_ARROW_RIGHT -> editor.moveRight()
+            KEY_ARROW_UP -> editor.moveUp()
+            KEY_ARROW_DOWN -> editor.moveDown()
+            KEY_HOME -> editor.goToStartOfLine()
+            KEY_END -> editor.goToEndOfLine()
+            else -> false
+        }
+        if (needUpdate) {
             updateHtml(editor)
         }
-        if (e.which == 8 && editor.deletePrevChar()) {
-            updateHtml(editor)
+    }
+    js("$(document)").click({ e: dynamic ->
+        println("CLICKED ${e.pageX} ${e.pageY}")
+        val left = js("$(\"#content\").offset().left") as Double
+        val top = js("$(\"#content\").offset().top") as Double
+        val height = js("$(\"#content\").height()") as Double
+        val line = when {
+            e.pageY < top -> 1
+            e.pageY > top + height -> editor.numberOfLines()
+            else -> {
+                val lineHeight = height / editor.numberOfLines()
+                Math.round((e.pageY - top) / lineHeight)
+            }
         }
-        if (e.which == 37 && editor.moveLeft()) {
-            updateHtml(editor)
-        }
-        if (e.which == 39 && editor.moveRight()) {
-            updateHtml(editor)
-        }
-        if (e.which == 38 && editor.moveUp()) {
-            updateHtml(editor)
-        }
-        if (e.which == 40 && editor.moveDown()) {
-            updateHtml(editor)
-        }
-        if (e.which == 36) {
-            editor.goToStartOfLine()
-            updateHtml(editor)
-        }
-        if (e.which == 35) {
-            editor.goToEndOfLine()
-            updateHtml(editor)
-        }
+        editor.goTo(line, 0)
+        updateHtml(editor)
+        println("OFFSET $left $top")
+        println("LINE $line")
     })
     println("..initialized")
 }
